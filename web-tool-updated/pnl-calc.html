@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lot PNL Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3e7;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .profit-card {
+            background-color: #f9f9f9;
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .profit-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .loss-card {
+            background-color: #f8d7da;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            color: #721c24;
+        }
+
+        .error {
+            color: red;
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lot PNL Calculator</h1>
+    <div class="container">
+        <label for="avgPrice">Enter Average Price</label>
+        <input id="avgPrice" type="text">
+        
+        <label for="qtytotal">Enter Quantity</label>
+        <input id="qtytotal" type="text">
+        
+        <label for="lotSize">Enter Lot Size (default 30)</label>
+        <input id="lotSize" type="text" value="30">
+        
+        <button onclick="calculateLotPrice()">Submit</button>
+
+        <div class="output" id="output"></div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        function calculateLotPrice() {
+            // Reset the error message
+            document.getElementById('error').innerHTML = "";
+
+            // Get the values from the inputs
+            var avgPrice = parseFloat(document.getElementById('avgPrice').value);
+            var totalQty = parseInt(document.getElementById('qtytotal').value);
+            var lotSize = parseInt(document.getElementById('lotSize').value) || 30;
+            
+            // Validate the input
+            if (isNaN(avgPrice) || isNaN(totalQty) || avgPrice <= 0 || totalQty <= 0 || lotSize <= 0) {
+                document.getElementById('output').innerHTML = "Please enter valid numbers for all fields.";
+                return;
+            }
+
+            // Calculate the total amount
+            var totalAmount = avgPrice * totalQty;
+
+            // Calculate the number of lots (each lot contains 'lotSize' quantity)
+            var numOfLots = Math.floor(totalQty / lotSize);
+            if (totalQty % lotSize !== 0) {
+                document.getElementById('error').innerHTML = "Warning: Quantity does not evenly divide into lots.";
+            }
+
+            // Function to calculate profit and profit per lot for a given percentage
+            function getProfitDetails(percentage) {
+                var profit = totalAmount * (percentage / 100);
+                var profitPerLot = profit / numOfLots;
+                return {
+                    profit: profit,
+                    profitPerLot: profitPerLot
+                };
+            }
+
+            // Function to calculate the trigger price at a given percentage
+            function getTriggerPrice(percentage) {
+                var triggerPrice = avgPrice + (avgPrice * (percentage / 100));
+                return triggerPrice;
+            }
+
+            // Create an array of profit percentages
+            var profitPercentages = [5, 10, 15, 20, 25];
+            var resultHTML = '';
+
+            // Loop through each percentage and display the breakdown in separate cards
+            profitPercentages.forEach(function(percentage) {
+                var details = getProfitDetails(percentage);
+                var triggerPrice = getTriggerPrice(percentage);
+
+                resultHTML += `
+                    <div class="profit-card">
+                        <h3>Profit Breakdown at ${percentage}%</h3>
+                        <p>Total Amount(${totalAmount.toFixed(2)}) * ${percentage}% = ₹${details.profit.toFixed(2)}</p>
+                        <p>Profit per lot(${percentage}%): ₹${details.profitPerLot.toFixed(2)}</p>
+                        <p>Trigger Price at ${percentage}%: ₹${triggerPrice.toFixed(2)}</p>
+                    </div>
+                `;
+            });
+
+            // Calculate the loss limit at 17%
+            var lossLimit = totalAmount * 0.17;
+            
+            // Display the loss limit in a red card
+            resultHTML += `
+                <div class="loss-card">
+                    <h3>Loss Limit at 17%</h3>
+                    <p>Total Amount(${totalAmount.toFixed(2)}) * 17% = ₹${lossLimit.toFixed(2)}</p>
+                </div>
+            `;
+
+            // Display the result
+            document.getElementById('output').innerHTML = resultHTML;
+        }
+    </script>
+</body>
+</html>
